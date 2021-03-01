@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">MyPlayer</string>
+    <string name="play">Play</string>
+    <string name="stop">stop</string>
+    <string name="pause">pause</string>
+    <string name="next">next</string>
+    <string name="player_tab">My Player</string>
+    <string name="playlist_tab">Songs</string>
+    <string name="_0_00">0:00</string>
+    <string name="my_media_player">My Media PLayer</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
