@@ -37,6 +37,7 @@ public class MyService extends Service {
     private Executor executor;
     private int currentSong;
 
+
     public static final String NEXT = "NEXT";
     public static final String PLAY = "PLAY";
     public static final String PAUSE = "PAUSE";
@@ -68,8 +69,13 @@ public class MyService extends Service {
 
             case PLAY:
 
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                }
                 Log.d(TAG, Thread.currentThread().getName());
-                mediaPlayer = MediaPlayer.create(this, R.raw.breack);
+                mediaPlayer = MediaPlayer.create(this, playList.get(currentSong).getId());
+
                 executor.execute(timeUpdaterRunnable);
                 break;
             case "STOP":
@@ -91,11 +97,12 @@ public class MyService extends Service {
                 break;
             case "custom_song":
                 currentSong = intent.getIntExtra("currentPosition", 0);
-                if (mediaPlayer != null) {
-                    mediaPlayer.stop();
-                }
-                playPosition = currentSong;
 
+                playPosition = currentSong;
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                }
                 mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
 
                 Playlist playlistZero = songList.get(0);
@@ -122,9 +129,10 @@ public class MyService extends Service {
             playPosition = 0;
         }
 
-        mediaPlayer.stop();
-        mediaPlayer.reset();
-
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+        }
         mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
         Playlist playlistZero = songList.get(0);
 
@@ -194,6 +202,10 @@ public class MyService extends Service {
         @Override
         public void run() {
 
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+                mediaPlayer.release();
+            }
             mediaPlayer.start();
 
             while (mediaPlayer.isPlaying()) {
