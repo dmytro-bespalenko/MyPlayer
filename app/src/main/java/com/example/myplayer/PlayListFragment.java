@@ -1,9 +1,12 @@
 package com.example.myplayer;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
@@ -13,13 +16,14 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -61,6 +65,10 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
+
+        LocalBroadcastManager.getInstance(Objects.requireNonNull(getActivity())).registerReceiver(mMessageReceiver,
+                new IntentFilter("song_list"));
+
         recycleAdapter = new RecycleAdapter(playList);
         recycleAdapter.registerListener(this);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -75,6 +83,18 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
 
     }
 
+    private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+
+        @RequiresApi(api = Build.VERSION_CODES.N)
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ArrayList<Playlist> finalList = intent.getParcelableArrayListExtra("finallist");
+            Log.d(TAG, "finallist: " + intent.getIntegerArrayListExtra("finallist"));
+
+            recycleAdapter.setSongsList(finalList);
+
+        }
+    };
 
     public void getList() throws IllegalAccessException {
 
@@ -106,9 +126,7 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
     public void onItemClicked(int position) {
         fragmentCommunicator.onActivityCallback1(position);
 
-        Collections.swap(playList, 0, position);
-
-        recycleAdapter.notifyItemMoved(position, 0);
+//        recycleAdapter.notifyItemMoved(position, 0);
 
     }
 }

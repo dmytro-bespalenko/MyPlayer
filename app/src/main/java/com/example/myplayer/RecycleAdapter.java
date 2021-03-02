@@ -19,6 +19,10 @@ public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHold
     private AdapterCommunicator adapterCommunicator;
 
 
+    public void setSongsList(List<Playlist> songsList) {
+        this.songsList = songsList;
+    }
+
     public RecycleAdapter(List<Playlist> songsList) {
         this.songsList = songsList;
 
