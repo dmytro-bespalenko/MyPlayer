@@ -69,10 +69,7 @@ public class MyService extends Service {
 
             case PLAY:
 
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                    mediaPlayer.release();
-                }
+                releaseMediaPlayer();
                 Log.d(TAG, Thread.currentThread().getName());
                 mediaPlayer = MediaPlayer.create(this, playList.get(currentSong).getId());
 
@@ -103,6 +100,7 @@ public class MyService extends Service {
                     mediaPlayer.stop();
                     mediaPlayer.release();
                 }
+                releaseMediaPlayer();
                 mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
 
                 Playlist playlistZero = songList.get(0);
@@ -121,6 +119,19 @@ public class MyService extends Service {
         return START_REDELIVER_INTENT;
     }
 
+    private void releaseMediaPlayer() {
+        try {
+            if (mediaPlayer != null) {
+                if (mediaPlayer.isPlaying())
+                    mediaPlayer.stop();
+                mediaPlayer.release();
+                mediaPlayer = null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void next() {
 
         playPosition++;
@@ -129,10 +140,7 @@ public class MyService extends Service {
             playPosition = 0;
         }
 
-        if (mediaPlayer.isPlaying()) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-        }
+        releaseMediaPlayer();
         mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
         Playlist playlistZero = songList.get(0);
 
@@ -141,10 +149,7 @@ public class MyService extends Service {
         sendFinalList();
 
 
-        if (!mediaPlayer.isPlaying()) {
-            Log.d(TAG, Thread.currentThread().getName());
-            executor.execute(timeUpdaterRunnable);
-        }
+        executor.execute(timeUpdaterRunnable);
 
 
     }
@@ -202,10 +207,6 @@ public class MyService extends Service {
         @Override
         public void run() {
 
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-                mediaPlayer.release();
-            }
             mediaPlayer.start();
 
             while (mediaPlayer.isPlaying()) {
