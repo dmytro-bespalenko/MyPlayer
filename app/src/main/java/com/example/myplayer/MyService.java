@@ -33,7 +33,6 @@ public class MyService extends Service {
     private int currentSeekBarPoss;
     private List<Playlist> playList = new ArrayList<>();
     private List<Playlist> songList = new ArrayList<>();
-    List<Playlist> finalList = new ArrayList<>();
     private int playPosition = 0;
     private Executor executor;
     private int currentSong;
@@ -69,14 +68,13 @@ public class MyService extends Service {
 
             case PLAY:
 
-                if (mediaPlayer.isPlaying()) {
-                    break;
-                }
                 Log.d(TAG, Thread.currentThread().getName());
+                mediaPlayer = MediaPlayer.create(this, R.raw.breack);
                 executor.execute(timeUpdaterRunnable);
                 break;
             case "STOP":
                 Log.d(TAG, "STOP " + Thread.currentThread().getName());
+
                 onDestroy();
                 break;
             case PAUSE:
@@ -85,35 +83,27 @@ public class MyService extends Service {
                 break;
             case NEXT:
                 Log.d(TAG, "NEXT" + Thread.currentThread().getName());
-                mediaPlayer.stop();
                 next();
                 break;
             case "PROGRESS":
                 Log.d(TAG, "progress" + intent.getExtras().getInt("progress"));
-                int progress = intent.getExtras().getInt("progress");
-                mediaPlayer.seekTo(progress);
+                mediaPlayer.seekTo(intent.getExtras().getInt("progress"));
                 break;
             case "custom_song":
-
                 currentSong = intent.getIntExtra("currentPosition", 0);
                 if (mediaPlayer != null) {
-                    mediaPlayer.reset();
+                    mediaPlayer.stop();
                 }
-
                 playPosition = currentSong;
 
-                finalList.add(0, songList.get(playPosition));
+                mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
 
-                for (int i = 0; i < songList.size(); i++) {
-                    if (!songList.get(i).equals(songList.get(playPosition))) {
-                        finalList.add(songList.get(i));
-                        Log.d("songList.get(i)", "onStartCommand: songList.get(i)" + songList.get(i));
-                    }
+                Playlist playlistZero = songList.get(0);
+
+                if (playPosition != 0) {
+                    Collections.swap(songList, 0, playPosition);
+                    Collections.swap(songList, songList.indexOf(playlistZero), songList.size() - 1);
                 }
-
-
-                mediaPlayer = MediaPlayer.create(this, finalList.get(playPosition).getId());
-
                 sendFinalList();
                 executor.execute(timeUpdaterRunnable);
 
@@ -125,22 +115,29 @@ public class MyService extends Service {
     }
 
     public void next() {
+
         playPosition++;
 
-        if (playPosition == finalList.size()) {
+        if (playPosition == songList.size()) {
             playPosition = 0;
         }
 
-//        Collections.swap(finalList, 0, playPosition);
-
         mediaPlayer.stop();
         mediaPlayer.reset();
-        mediaPlayer = MediaPlayer.create(this, finalList.get(playPosition).getId());
+
+        mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
+        Playlist playlistZero = songList.get(0);
+
+        Collections.swap(songList, playPosition, 0);
+        Collections.swap(songList, songList.indexOf(playlistZero), songList.size() - 1);
+        sendFinalList();
+
 
         if (!mediaPlayer.isPlaying()) {
             Log.d(TAG, Thread.currentThread().getName());
             executor.execute(timeUpdaterRunnable);
         }
+
 
     }
 
@@ -213,6 +210,7 @@ public class MyService extends Service {
 
             if (mediaPlayer.getCurrentPosition() / 1000 >= mediaPlayer.getDuration() / 1000) {
                 next();
+                playPosition--;
                 Log.d(TAG, "run: " + "NEXT() " + " " + currentSeekBarPoss);
             }
 
@@ -223,7 +221,7 @@ public class MyService extends Service {
     private void sendFinalList() {
 
         Intent intent = new Intent("song_list");
-        intent.putParcelableArrayListExtra("finallist", (ArrayList<? extends Parcelable>) finalList);
+        intent.putParcelableArrayListExtra("finallist", (ArrayList<? extends Parcelable>) songList);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         Log.d("sendFinalList() ", "Broadcasting message");
@@ -249,8 +247,9 @@ public class MyService extends Service {
         super.onDestroy();
         currentSeekBarPoss = 0;
         sendMessage();
-        mediaPlayer.stop();
 
+        mediaPlayer.stop();
+        stopForeground(false);
     }
 
     @Override

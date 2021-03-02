@@ -69,7 +69,7 @@ public class PlayerFragment extends Fragment  {
                 intent.setAction("STOP");
                 Log.d(TAG, "onClick: STOP");
                 Objects.requireNonNull(getActivity()).startService(intent);
-//                getActivity().stopService(intent);
+
             }
         });
 

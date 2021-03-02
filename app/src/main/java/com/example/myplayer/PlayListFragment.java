@@ -30,7 +30,6 @@ import java.util.Objects;
 public class PlayListFragment extends Fragment implements AdapterCommunicator {
 
 
-    private RecyclerView recyclerView;
     private RecycleAdapter recycleAdapter;
     private List<Playlist> playList;
 
@@ -57,9 +56,15 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
     }
 
     @Override
+    public void onDestroy() {
+        LocalBroadcastManager.getInstance(Objects.requireNonNull(getActivity())).unregisterReceiver(mMessageReceiver);
+        super.onDestroy();
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        recyclerView = view.findViewById(R.id.playlist_recycle_view);
+        RecyclerView recyclerView = view.findViewById(R.id.playlist_recycle_view);
         try {
             getList();
         } catch (IllegalAccessException e) {
@@ -92,6 +97,7 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
             Log.d(TAG, "finallist: " + intent.getIntegerArrayListExtra("finallist"));
 
             recycleAdapter.setSongsList(finalList);
+            recycleAdapter.notifyDataSetChanged();
 
         }
     };
@@ -124,9 +130,9 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
 
     @Override
     public void onItemClicked(int position) {
+
         fragmentCommunicator.onActivityCallback1(position);
 
-//        recycleAdapter.notifyItemMoved(position, 0);
 
     }
 }
