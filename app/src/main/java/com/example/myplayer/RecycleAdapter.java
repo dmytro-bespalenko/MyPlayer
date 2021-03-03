@@ -1,7 +1,7 @@
 package com.example.myplayer;
 
+import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -45,7 +45,6 @@ public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 
         Playlist song = songsList.get(position);
-
         CardView cv = holder.cardView;
 
         TextView nameView = cv.findViewById(R.id.nameMusic);
@@ -53,7 +52,6 @@ public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHold
 
         TextView artistView = cv.findViewById(R.id.artistMusic);
         artistView.setText(String.valueOf(song.getArtist()));
-
 
     }
 
@@ -78,20 +76,14 @@ public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHold
             imageView = itemView.findViewById(R.id.iconMusic);
 
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    adapterCommunicator.onItemClicked(getAdapterPosition());
-
-                }
+            itemView.setOnClickListener(v -> {
+                adapterCommunicator.onItemClicked(getAdapterPosition());
+                Log.d(TAG, "onClick: " + getAdapterPosition());
             });
-            itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    adapterCommunicator.onItemLongClicked(getAdapterPosition());
-                    return true;
-                }
+            itemView.setOnLongClickListener(v -> {
+                adapterCommunicator.onItemLongClicked(getAdapterPosition());
+                Log.d(TAG, "onLongClick: " + getAdapterPosition());
+                return true;
             });
         }
 

@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements FragmentCommunica
     public void onActivityClickBack(int song) {
 
         Intent intent = new Intent(this, MyService.class);
-        intent.setAction("custom_song");
+        intent.setAction("CUSTOM_SONG");
         intent.putExtra("currentPosition", song);
         startService(intent);
 
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements FragmentCommunica
     public void onActivityLongClickBack(int song) {
 
         Intent intent = new Intent(this, MyService.class);
-        intent.setAction("long_click");
+        intent.setAction("LONG_CLICK");
         intent.putExtra("longClickPosition", song);
         startService(intent);
         Log.d(TAG, "LocalBroadcastManagerNumberOfLongClick" + song);

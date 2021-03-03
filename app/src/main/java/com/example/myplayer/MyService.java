@@ -30,13 +30,12 @@ public class MyService extends Service {
 
     private MediaPlayer mediaPlayer;
     private static final String TAG = "My_LOG";
-    private int currentSeekBarPoss;
+    private int currentSeekBarPosition;
     private List<Playlist> playList = new ArrayList<>();
-    private List<Playlist> songList = new ArrayList<>();
+    private List<Playlist> finalPlayList = new ArrayList<>();
     private int playPosition = 0;
     private Executor executor;
-    private int currentSong;
-    private int deleteSong;
+    private int clickOnSong;
 
     public static final String NEXT = "NEXT";
     public static final String PLAY = "PLAY";
@@ -64,15 +63,13 @@ public class MyService extends Service {
         switch (action) {
             case "LIST":
                 playList = intent.getParcelableArrayListExtra("song");
-                songList.addAll(playList);
+                finalPlayList.addAll(playList);
                 break;
-
             case PLAY:
-
-                if (songList.size() > 0) {
+                if (finalPlayList.size() > 0 && !mediaPlayer.isPlaying()) {
                     releaseMediaPlayer();
                     Log.d(TAG, Thread.currentThread().getName());
-                    mediaPlayer = MediaPlayer.create(this, playList.get(currentSong).getId());
+                    mediaPlayer = MediaPlayer.create(this, playList.get(clickOnSong).getId());
                     executor.execute(timeUpdaterRunnable);
                 }
 
@@ -84,52 +81,64 @@ public class MyService extends Service {
                 break;
             case PAUSE:
                 Log.d(TAG, "PAUSE" + Thread.currentThread().getName());
-                mediaPlayer.pause();
+                if (mediaPlayer.isPlaying()) {
+                    if (mediaPlayer != null) {
+                        mediaPlayer.pause();
+                        currentSeekBarPosition = mediaPlayer.getCurrentPosition();
+                    }
+
+                } else {
+
+                    if (mediaPlayer != null) {
+                        mediaPlayer.start();
+                        mediaPlayer.seekTo(currentSeekBarPosition);
+                        executor.execute(timeUpdaterRunnable);
+                    }
+
+                }
+
                 break;
             case NEXT:
                 Log.d(TAG, "NEXT" + Thread.currentThread().getName());
-                if (songList.size() > 0) {
-                    next();
+                if (finalPlayList.size() > 0) {
+                    nextSong();
                 }
                 break;
             case "PROGRESS":
                 Log.d(TAG, "progress" + intent.getExtras().getInt("progress"));
                 mediaPlayer.seekTo(intent.getExtras().getInt("progress"));
                 break;
-            case "custom_song":
-                currentSong = intent.getIntExtra("currentPosition", 0);
+            case "CUSTOM_SONG":
+                clickOnSong = intent.getIntExtra("currentPosition", 0);
 
-                playPosition = currentSong;
+                playPosition = clickOnSong;
                 if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                    mediaPlayer.release();
+                    releaseMediaPlayer();
                 }
-                releaseMediaPlayer();
-                mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
+                mediaPlayer = MediaPlayer.create(this, finalPlayList.get(clickOnSong).getId());
 
-                Playlist playlistZero = songList.get(0);
+                Playlist firstSong = finalPlayList.get(0);
 
                 if (playPosition != 0) {
-                    Collections.swap(songList, 0, playPosition);
-                    Collections.swap(songList, songList.indexOf(playlistZero), songList.size() - 1);
+                    Collections.swap(finalPlayList, 0, playPosition);
+                    Collections.swap(finalPlayList, finalPlayList.indexOf(firstSong), finalPlayList.size() - 1);
                 }
 
+                playPosition = 0;
                 sendFinalList();
                 executor.execute(timeUpdaterRunnable);
 
-                Log.d(TAG, "onStartCommand currentPosition: " + currentSong);
+                Log.d(TAG, "onStartCommand currentPosition: " + clickOnSong);
                 break;
-            case "long_click":
+            case "LONG_CLICK":
 
-                deleteSong = intent.getIntExtra("longClickPosition", 0);
-                songList.remove(deleteSong);
-//                playPosition = deleteSong;
+                int deleteSong = intent.getIntExtra("longClickPosition", 0);
+                finalPlayList.remove(deleteSong);
                 sendFinalList();
-
                 break;
 
         }
-        return START_REDELIVER_INTENT;
+        return START_STICKY;
     }
 
     private void releaseMediaPlayer() {
@@ -145,25 +154,26 @@ public class MyService extends Service {
     }
 
 
-    public void next() {
+    public void nextSong() {
 
         playPosition++;
 
-        if (playPosition == songList.size()) {
+        if (playPosition == finalPlayList.size()) {
             playPosition = 0;
         }
 
         releaseMediaPlayer();
-        mediaPlayer = MediaPlayer.create(this, songList.get(playPosition).getId());
-        Playlist playlistZero = songList.get(0);
+        mediaPlayer = MediaPlayer.create(this, finalPlayList.get(playPosition).getId());
 
-        Collections.swap(songList, playPosition, 0);
-        Collections.swap(songList, songList.indexOf(playlistZero), songList.size() - 1);
+        Playlist playlistFirstSong = finalPlayList.get(0);
+        Collections.swap(finalPlayList, playPosition, 0);
+        Collections.swap(finalPlayList, finalPlayList.indexOf(playlistFirstSong), finalPlayList.size() - 1);
         sendFinalList();
+        playPosition--;
 
 
         executor.execute(timeUpdaterRunnable);
-
+        Log.d("execute ", "nextSong: " + Thread.currentThread().getName());
 
     }
 
@@ -219,25 +229,22 @@ public class MyService extends Service {
     private final Runnable timeUpdaterRunnable = new Runnable() {
         @Override
         public void run() {
-
             mediaPlayer.start();
-
             while (mediaPlayer.isPlaying()) {
                 try {
-                    currentSeekBarPoss = mediaPlayer.getCurrentPosition();
-                    Log.d(TAG, "run: " + this.toString() + " " + currentSeekBarPoss);
-                    sendMessage();
+                    currentSeekBarPosition = mediaPlayer.getCurrentPosition();
+                    Log.d(TAG, "run: " + this.toString() + " " + currentSeekBarPosition);
+                    sendSeekBarMessage();
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
             }
 
+
             if (mediaPlayer.getCurrentPosition() / 1000 >= mediaPlayer.getDuration() / 1000) {
-                next();
-                playPosition--;
-                Log.d(TAG, "run: " + "NEXT() " + " " + currentSeekBarPoss);
+                nextSong();
+                Log.d(TAG, "run: " + "NEXT() " + " " + currentSeekBarPosition);
             }
 
         }
@@ -245,36 +252,35 @@ public class MyService extends Service {
 
 
     private void sendFinalList() {
-
         Intent intent = new Intent("song_list");
-        intent.putParcelableArrayListExtra("finallist", (ArrayList<? extends Parcelable>) songList);
-
+        intent.putParcelableArrayListExtra("finallist", (ArrayList<? extends Parcelable>) finalPlayList);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         Log.d("sendFinalList() ", "Broadcasting message");
     }
 
 
-    private void sendMessage() {
-        Log.d("sender", "Broadcasting message");
+    private void sendSeekBarMessage() {
         Intent intent = new Intent("custom-event-name");
-        intent.putExtra("messageCurrentPosition", String.valueOf(currentSeekBarPoss));
+        intent.putExtra("messageCurrentPosition", String.valueOf(currentSeekBarPosition));
+        Log.d(TAG, "sendMessage: LocalBroadcastManager " + currentSeekBarPosition);
+
         intent.putExtra("messageMax", String.valueOf(mediaPlayer.getDuration()));
-        Log.d("receiver", "Got intent.putExtra messageCurrent: " + currentSeekBarPoss + " ");
+        Log.d(TAG, "sendMessage: LocalBroadcastManager " + mediaPlayer.getDuration());
 
         intent.putExtra("current_song", playPosition);
+        Log.d(TAG, "sendMessage: LocalBroadcastManager " + playPosition);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-        Log.d(TAG, "sendMessage: LocalBroadcastManager");
     }
 
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        currentSeekBarPoss = 0;
-        sendMessage();
-
+        currentSeekBarPosition = 0;
+        sendSeekBarMessage();
         mediaPlayer.stop();
+
         stopForeground(false);
     }
 

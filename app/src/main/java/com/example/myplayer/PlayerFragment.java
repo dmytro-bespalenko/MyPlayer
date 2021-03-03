@@ -27,7 +27,7 @@ public class PlayerFragment extends Fragment  {
     private SeekBar seekBar;
     private int progressValue;
     private TextView mTextView;
-
+    private TextView durationTextView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -42,6 +42,7 @@ public class PlayerFragment extends Fragment  {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mTextView = view.findViewById(R.id.progressBar);
+        durationTextView= view.findViewById(R.id.durationBar);
         final FloatingActionButton btnPlay = view.findViewById(R.id.buttonPlay);
         final FloatingActionButton btnStop = view.findViewById(R.id.buttonStop);
         final FloatingActionButton btnPause = view.findViewById(R.id.buttonPause);
@@ -134,6 +135,8 @@ public class PlayerFragment extends Fragment  {
             Log.d("MAX", "messageMaxDuration = [" + messageMaxDuration + "], messageCurrentPosition = [" + messageCurrentPosition + "]");
             seekBar.setProgress(messageCurrentPosition);
 
+            durationTextView.setText(milliSecondsToTimer(Long.parseLong(messageMaxDuration)));
+
         }
     };
 
@@ -149,6 +152,7 @@ public class PlayerFragment extends Fragment  {
 
     private void updatePlayer(int currentDuration) {
         mTextView.setText(milliSecondsToTimer(currentDuration));
+
     }
 
 
