@@ -113,6 +113,7 @@ public class MyService extends Service {
                     Collections.swap(songList, 0, playPosition);
                     Collections.swap(songList, songList.indexOf(playlistZero), songList.size() - 1);
                 }
+
                 sendFinalList();
                 executor.execute(timeUpdaterRunnable);
 
