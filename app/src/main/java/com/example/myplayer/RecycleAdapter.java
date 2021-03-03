@@ -86,6 +86,13 @@ public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHold
 
                 }
             });
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    adapterCommunicator.onItemLongClicked(getAdapterPosition());
+                    return true;
+                }
+            });
         }
 
 

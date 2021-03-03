@@ -36,7 +36,7 @@ public class MyService extends Service {
     private int playPosition = 0;
     private Executor executor;
     private int currentSong;
-
+    private int deleteSong;
 
     public static final String NEXT = "NEXT";
     public static final String PLAY = "PLAY";
@@ -69,11 +69,13 @@ public class MyService extends Service {
 
             case PLAY:
 
-                releaseMediaPlayer();
-                Log.d(TAG, Thread.currentThread().getName());
-                mediaPlayer = MediaPlayer.create(this, playList.get(currentSong).getId());
+                if (songList.size() > 0) {
+                    releaseMediaPlayer();
+                    Log.d(TAG, Thread.currentThread().getName());
+                    mediaPlayer = MediaPlayer.create(this, playList.get(currentSong).getId());
+                    executor.execute(timeUpdaterRunnable);
+                }
 
-                executor.execute(timeUpdaterRunnable);
                 break;
             case "STOP":
                 Log.d(TAG, "STOP " + Thread.currentThread().getName());
@@ -86,7 +88,9 @@ public class MyService extends Service {
                 break;
             case NEXT:
                 Log.d(TAG, "NEXT" + Thread.currentThread().getName());
-                next();
+                if (songList.size() > 0) {
+                    next();
+                }
                 break;
             case "PROGRESS":
                 Log.d(TAG, "progress" + intent.getExtras().getInt("progress"));
@@ -114,6 +118,14 @@ public class MyService extends Service {
 
                 Log.d(TAG, "onStartCommand currentPosition: " + currentSong);
                 break;
+            case "long_click":
+
+                deleteSong = intent.getIntExtra("longClickPosition", 0);
+                songList.remove(deleteSong);
+//                playPosition = deleteSong;
+                sendFinalList();
+
+                break;
 
         }
         return START_REDELIVER_INTENT;
@@ -125,12 +137,12 @@ public class MyService extends Service {
                 if (mediaPlayer.isPlaying())
                     mediaPlayer.stop();
                 mediaPlayer.release();
-                mediaPlayer = null;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     public void next() {
 

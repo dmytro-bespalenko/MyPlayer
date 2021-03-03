@@ -130,9 +130,14 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
 
     @Override
     public void onItemClicked(int position) {
+        fragmentCommunicator.onActivityClickBack(position);
+    }
 
-        fragmentCommunicator.onActivityCallback1(position);
-
+    @Override
+    public void onItemLongClicked(int position) {
+        fragmentCommunicator.onActivityLongClickBack(position);
 
     }
+
+
 }

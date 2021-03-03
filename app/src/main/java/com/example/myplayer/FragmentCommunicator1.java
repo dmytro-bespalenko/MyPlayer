@@ -1,6 +1,7 @@
 package com.example.myplayer;
 
 public interface FragmentCommunicator1 {
-    void onActivityCallback1(int song);
+    void onActivityClickBack(int song);
+    void onActivityLongClickBack(int song);
 
 }

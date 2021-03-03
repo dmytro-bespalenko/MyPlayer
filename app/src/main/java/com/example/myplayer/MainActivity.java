@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements FragmentCommunica
     }
 
     @Override
-    public void onActivityCallback1(int song) {
+    public void onActivityClickBack(int song) {
 
         Intent intent = new Intent(this, MyService.class);
         intent.setAction("custom_song");
@@ -46,6 +46,17 @@ public class MainActivity extends AppCompatActivity implements FragmentCommunica
         startService(intent);
 
         Log.d(TAG, "LocalBroadcastManagerNumberOfSong" + song);
+    }
+
+    @Override
+    public void onActivityLongClickBack(int song) {
+
+        Intent intent = new Intent(this, MyService.class);
+        intent.setAction("long_click");
+        intent.putExtra("longClickPosition", song);
+        startService(intent);
+        Log.d(TAG, "LocalBroadcastManagerNumberOfLongClick" + song);
+
     }
 
 }
