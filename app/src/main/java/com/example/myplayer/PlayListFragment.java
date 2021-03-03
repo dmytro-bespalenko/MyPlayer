@@ -34,7 +34,7 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
     private List<Playlist> playList;
 
     private final String TAG = "My_Log";
-    private FragmentCommunicator1 fragmentCommunicator;
+    private FragmentCommunicator fragmentCommunicator;
 
 
     @Override
@@ -48,7 +48,7 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         try {
-            fragmentCommunicator = (FragmentCommunicator1) context;
+            fragmentCommunicator = (FragmentCommunicator) context;
         } catch (ClassCastException e) {
             throw new ClassCastException();
         }

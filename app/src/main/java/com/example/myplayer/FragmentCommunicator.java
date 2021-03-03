@@ -1,6 +1,6 @@
 package com.example.myplayer;
 
-public interface FragmentCommunicator1 {
+public interface FragmentCommunicator {
     void onActivityClickBack(int song);
     void onActivityLongClickBack(int song);
 

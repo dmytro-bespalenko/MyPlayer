@@ -76,7 +76,6 @@ public class MyService extends Service {
                 break;
             case "STOP":
                 Log.d(TAG, "STOP " + Thread.currentThread().getName());
-
                 onDestroy();
                 break;
             case PAUSE:
@@ -280,7 +279,6 @@ public class MyService extends Service {
         currentSeekBarPosition = 0;
         sendSeekBarMessage();
         mediaPlayer.stop();
-
         stopForeground(false);
     }
 

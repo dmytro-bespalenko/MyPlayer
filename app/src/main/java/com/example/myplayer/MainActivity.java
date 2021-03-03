@@ -11,7 +11,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.tabs.TabLayout;
 
 
-public class MainActivity extends AppCompatActivity implements FragmentCommunicator1 {
+public class MainActivity extends AppCompatActivity implements FragmentCommunicator {
 
 
     private static final String TAG = "My_LOG";
