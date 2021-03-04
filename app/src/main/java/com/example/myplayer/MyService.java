@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.util.Log;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
@@ -43,6 +44,11 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
     public static final String PAUSE = "PAUSE";
     public static final String STOP = "STOP";
 
+    public static final String PROGRESS = "PROGRESS";
+    public static final String CUSTOM_SONG = "CUSTOM_SONG";
+    public static final String LONG_CLICK = "LONG_CLICK";
+    public static final String LIST = "LIST";
+
 
     @Override
     public void onCreate() {
@@ -64,7 +70,7 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
         String action = intent.getAction();
 
         switch (action) {
-            case "LIST":
+            case LIST:
                 playList = intent.getParcelableArrayListExtra("song");
                 finalPlayList.addAll(playList);
                 break;
@@ -74,7 +80,7 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
                     mediaPlayer.seekTo(currentSeekBarPosition);
                     executor.execute(timeUpdaterRunnable);
                 }
-                
+
                 if (finalPlayList.size() > 0 && !Objects.requireNonNull(mediaPlayer).isPlaying()) {
                     releaseMediaPlayer();
                     playPosition = clickOnSong;
@@ -82,7 +88,10 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
                     mediaPlayer.setOnCompletionListener(this);
                     mediaPlayer.start();
                     executor.execute(timeUpdaterRunnable);
+                } else {
+                    Toast.makeText(this, "Playlist is empty", Toast.LENGTH_LONG).show();
                 }
+
                 break;
             case STOP:
                 currentSeekBarPosition = 0;
@@ -103,10 +112,10 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
                     nextSong();
                 }
                 break;
-            case "PROGRESS":
+            case PROGRESS:
                 mediaPlayer.seekTo(intent.getExtras().getInt("progress"));
                 break;
-            case "CUSTOM_SONG":
+            case CUSTOM_SONG:
                 clickOnSong = intent.getIntExtra("currentPosition", 0);
                 playPosition = clickOnSong;
                 if (mediaPlayer.isPlaying()) {
@@ -120,8 +129,7 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
                 sendFinalList();
                 executor.execute(timeUpdaterRunnable);
                 break;
-            case "LONG_CLICK":
-
+            case LONG_CLICK:
                 int deleteSong = intent.getIntExtra("longClickPosition", 0);
                 finalPlayList.remove(deleteSong);
                 sendFinalList();
@@ -158,14 +166,15 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
         }
 
         releaseMediaPlayer();
-        mediaPlayer = MediaPlayer.create(this, finalPlayList.get(playPosition).getId());
-        mediaPlayer.setOnCompletionListener(this);
-        mediaPlayer.start();
-        swapSong();
-        sendFinalList();
-        playPosition--;
-        executor.execute(timeUpdaterRunnable);
-
+        if (!finalPlayList.isEmpty()) {
+            mediaPlayer = MediaPlayer.create(this, finalPlayList.get(playPosition).getId());
+            mediaPlayer.setOnCompletionListener(this);
+            mediaPlayer.start();
+            swapSong();
+            sendFinalList();
+            playPosition--;
+            executor.execute(timeUpdaterRunnable);
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
