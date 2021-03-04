@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHolder> {
+
     private final String TAG = "My_Log";
 
     private List<Playlist> songsList;
@@ -35,7 +36,6 @@ public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHold
     @NonNull
     @Override
     public RecycleAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-
 
         return new ViewHolder((CardView) LayoutInflater.from(parent.getContext()).inflate(R.layout.card_music, parent, false));
     }
@@ -75,14 +75,11 @@ public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.ViewHold
             artistView = itemView.findViewById(R.id.artistMusic);
             imageView = itemView.findViewById(R.id.iconMusic);
 
-
             itemView.setOnClickListener(v -> {
                 adapterCommunicator.onItemClicked(getAdapterPosition());
-                Log.d(TAG, "onClick: " + getAdapterPosition());
             });
             itemView.setOnLongClickListener(v -> {
                 adapterCommunicator.onItemLongClicked(getAdapterPosition());
-                Log.d(TAG, "onLongClick: " + getAdapterPosition());
                 return true;
             });
         }

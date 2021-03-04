@@ -21,7 +21,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.Objects;
 
-public class PlayerFragment extends Fragment  {
+public class PlayerFragment extends Fragment {
 
     private static final String TAG = "My_LOG";
     private SeekBar seekBar;
@@ -42,7 +42,7 @@ public class PlayerFragment extends Fragment  {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mTextView = view.findViewById(R.id.progressBar);
-        durationTextView= view.findViewById(R.id.durationBar);
+        durationTextView = view.findViewById(R.id.durationBar);
         final FloatingActionButton btnPlay = view.findViewById(R.id.buttonPlay);
         final FloatingActionButton btnStop = view.findViewById(R.id.buttonStop);
         final FloatingActionButton btnPause = view.findViewById(R.id.buttonPause);
@@ -52,50 +52,37 @@ public class PlayerFragment extends Fragment  {
         LocalBroadcastManager.getInstance(Objects.requireNonNull(getActivity())).registerReceiver(mMessageReceiver,
                 new IntentFilter("custom-event-name"));
 
-        btnPlay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(v.getContext(), MyService.class);
-                intent.setAction("PLAY");
-                Log.d(TAG, "onClick: PLAY");
-                Objects.requireNonNull(getActivity()).startService(intent);
+        btnPlay.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), MyService.class);
+            intent.setAction("PLAY");
+            Log.d(TAG, "onClick: PLAY");
+            Objects.requireNonNull(getActivity()).startService(intent);
 
-            }
         });
-        btnStop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        btnStop.setOnClickListener(v -> {
 
-                Intent intent = new Intent(v.getContext(), MyService.class);
-                intent.setAction("STOP");
-                Log.d(TAG, "onClick: STOP");
-                Objects.requireNonNull(getActivity()).startService(intent);
+            Intent intent = new Intent(v.getContext(), MyService.class);
+            intent.setAction("STOP");
+            Objects.requireNonNull(getActivity()).startService(intent);
 
-            }
+
         });
 
-        btnPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(v.getContext(), MyService.class);
-                intent.setAction("PAUSE");
-                Log.d(TAG, "onClick: PAUSE");
-                Objects.requireNonNull(getActivity()).startService(intent);
+        btnPause.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), MyService.class);
+            intent.setAction("PAUSE");
+            Log.d(TAG, "onClick: PAUSE");
+            Objects.requireNonNull(getActivity()).startService(intent);
 
 
-            }
         });
-        btnNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(v.getContext(), MyService.class);
-                intent.setAction("NEXT");
-                Log.d(TAG, "onClick: NEXT");
-                Objects.requireNonNull(getActivity()).startService(intent);
+        btnNext.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), MyService.class);
+            intent.setAction("NEXT");
+            Log.d(TAG, "onClick: NEXT");
+            Objects.requireNonNull(getActivity()).startService(intent);
 
-            }
         });
-
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -129,17 +116,17 @@ public class PlayerFragment extends Fragment  {
 
         @Override
         public void onReceive(Context context, Intent intent) {
+
             String messageMaxDuration = intent.getStringExtra("messageMax");
             seekBar.setMax(Integer.parseInt(messageMaxDuration));
+
             int messageCurrentPosition = Integer.parseInt(intent.getStringExtra("messageCurrentPosition"));
-            Log.d("MAX", "messageMaxDuration = [" + messageMaxDuration + "], messageCurrentPosition = [" + messageCurrentPosition + "]");
             seekBar.setProgress(messageCurrentPosition);
 
             durationTextView.setText(milliSecondsToTimer(Long.parseLong(messageMaxDuration)));
 
         }
     };
-
 
     Runnable mUpdateTime = new Runnable() {
         public void run() {
@@ -149,17 +136,14 @@ public class PlayerFragment extends Fragment  {
         }
     };
 
-
     private void updatePlayer(int currentDuration) {
         mTextView.setText(milliSecondsToTimer(currentDuration));
 
     }
 
-
     @Override
     public void onDestroy() {
         LocalBroadcastManager.getInstance(Objects.requireNonNull(getActivity())).unregisterReceiver(mMessageReceiver);
-        Log.d(TAG, "onDestroy: ");
         super.onDestroy();
     }
 

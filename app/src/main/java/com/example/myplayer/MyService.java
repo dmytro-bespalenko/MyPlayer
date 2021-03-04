@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-public class MyService extends Service {
+public class MyService extends Service implements MediaPlayer.OnCompletionListener {
 
 
     private MediaPlayer mediaPlayer;
@@ -40,6 +40,8 @@ public class MyService extends Service {
     public static final String NEXT = "NEXT";
     public static final String PLAY = "PLAY";
     public static final String PAUSE = "PAUSE";
+    public static final String STOP = "STOP";
+
 
     @Override
     public void onCreate() {
@@ -68,66 +70,48 @@ public class MyService extends Service {
             case PLAY:
                 if (finalPlayList.size() > 0 && !mediaPlayer.isPlaying()) {
                     releaseMediaPlayer();
-                    Log.d(TAG, Thread.currentThread().getName());
                     mediaPlayer = MediaPlayer.create(this, playList.get(clickOnSong).getId());
+                    mediaPlayer.setOnCompletionListener(this);
                     executor.execute(timeUpdaterRunnable);
                 }
-
                 break;
-            case "STOP":
-                Log.d(TAG, "STOP " + Thread.currentThread().getName());
+            case STOP:
                 onDestroy();
                 break;
             case PAUSE:
-                Log.d(TAG, "PAUSE" + Thread.currentThread().getName());
                 if (mediaPlayer.isPlaying()) {
                     if (mediaPlayer != null) {
                         mediaPlayer.pause();
                         currentSeekBarPosition = mediaPlayer.getCurrentPosition();
                     }
-
                 } else {
-
                     if (mediaPlayer != null) {
                         mediaPlayer.start();
                         mediaPlayer.seekTo(currentSeekBarPosition);
                         executor.execute(timeUpdaterRunnable);
                     }
-
                 }
-
                 break;
             case NEXT:
-                Log.d(TAG, "NEXT" + Thread.currentThread().getName());
                 if (finalPlayList.size() > 0) {
                     nextSong();
                 }
                 break;
             case "PROGRESS":
-                Log.d(TAG, "progress" + intent.getExtras().getInt("progress"));
                 mediaPlayer.seekTo(intent.getExtras().getInt("progress"));
                 break;
             case "CUSTOM_SONG":
                 clickOnSong = intent.getIntExtra("currentPosition", 0);
-
                 playPosition = clickOnSong;
                 if (mediaPlayer.isPlaying()) {
                     releaseMediaPlayer();
                 }
                 mediaPlayer = MediaPlayer.create(this, finalPlayList.get(clickOnSong).getId());
-
-                Playlist firstSong = finalPlayList.get(0);
-
-                if (playPosition != 0) {
-                    Collections.swap(finalPlayList, 0, playPosition);
-                    Collections.swap(finalPlayList, finalPlayList.indexOf(firstSong), finalPlayList.size() - 1);
-                }
-
+                mediaPlayer.setOnCompletionListener(this);
+                swapSong();
                 playPosition = 0;
                 sendFinalList();
                 executor.execute(timeUpdaterRunnable);
-
-                Log.d(TAG, "onStartCommand currentPosition: " + clickOnSong);
                 break;
             case "LONG_CLICK":
 
@@ -141,17 +125,22 @@ public class MyService extends Service {
     }
 
     private void releaseMediaPlayer() {
-        try {
-            if (mediaPlayer != null) {
-                if (mediaPlayer.isPlaying())
-                    mediaPlayer.stop();
-                mediaPlayer.release();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
+
     }
 
+    public void swapSong() {
+        Playlist firstSong = finalPlayList.get(0);
+        if (playPosition != 0) {
+            Collections.swap(finalPlayList, 0, playPosition);
+            Collections.swap(finalPlayList, finalPlayList.indexOf(firstSong), finalPlayList.size() - 1);
+        }
+
+    }
 
     public void nextSong() {
 
@@ -163,16 +152,11 @@ public class MyService extends Service {
 
         releaseMediaPlayer();
         mediaPlayer = MediaPlayer.create(this, finalPlayList.get(playPosition).getId());
-
-        Playlist playlistFirstSong = finalPlayList.get(0);
-        Collections.swap(finalPlayList, playPosition, 0);
-        Collections.swap(finalPlayList, finalPlayList.indexOf(playlistFirstSong), finalPlayList.size() - 1);
+        mediaPlayer.setOnCompletionListener(this);
+        swapSong();
         sendFinalList();
         playPosition--;
-
-
         executor.execute(timeUpdaterRunnable);
-        Log.d("execute ", "nextSong: " + Thread.currentThread().getName());
 
     }
 
@@ -180,16 +164,17 @@ public class MyService extends Service {
     private void createNotification() {
 
         String NOTIFICATION_CHANNEL_ID = "com.example.myplayer";
-
         String channelName = "My Background Service";
+
         NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
         chan.setLightColor(Color.BLUE);
         chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         assert manager != null;
         manager.createNotificationChannel(chan);
-        RemoteViews contentView = new RemoteViews(getPackageName(), R.layout.custom_notifications);
 
+        RemoteViews contentView = new RemoteViews(getPackageName(), R.layout.custom_notifications);
         contentView.setImageViewResource(R.id.imagePlayer, R.mipmap.ic_launcher);
         contentView.setTextViewText(R.id.titleMyPlayer, "Music is playing");
 
@@ -211,7 +196,6 @@ public class MyService extends Service {
         PendingIntent pendingPause = PendingIntent.getService(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         contentView.setOnClickPendingIntent(R.id.notiPause, pendingPause);
 
-
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
         notificationBuilder.setContent(contentView);
         Notification notification = notificationBuilder.setOngoing(true)
@@ -223,7 +207,6 @@ public class MyService extends Service {
         startForeground(2, notification);
 
     }
-
 
     private final Runnable timeUpdaterRunnable = new Runnable() {
         @Override
@@ -240,12 +223,6 @@ public class MyService extends Service {
                 }
             }
 
-
-            if (mediaPlayer.getCurrentPosition() / 1000 >= mediaPlayer.getDuration() / 1000) {
-                nextSong();
-                Log.d(TAG, "run: " + "NEXT() " + " " + currentSeekBarPosition);
-            }
-
         }
     };
 
@@ -254,24 +231,17 @@ public class MyService extends Service {
         Intent intent = new Intent("song_list");
         intent.putParcelableArrayListExtra("finallist", (ArrayList<? extends Parcelable>) finalPlayList);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-        Log.d("sendFinalList() ", "Broadcasting message");
     }
-
 
     private void sendSeekBarMessage() {
         Intent intent = new Intent("custom-event-name");
         intent.putExtra("messageCurrentPosition", String.valueOf(currentSeekBarPosition));
-        Log.d(TAG, "sendMessage: LocalBroadcastManager " + currentSeekBarPosition);
 
         intent.putExtra("messageMax", String.valueOf(mediaPlayer.getDuration()));
-        Log.d(TAG, "sendMessage: LocalBroadcastManager " + mediaPlayer.getDuration());
-
         intent.putExtra("current_song", playPosition);
-        Log.d(TAG, "sendMessage: LocalBroadcastManager " + playPosition);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
-
 
     @Override
     public void onDestroy() {
@@ -279,6 +249,7 @@ public class MyService extends Service {
         currentSeekBarPosition = 0;
         sendSeekBarMessage();
         mediaPlayer.stop();
+
         stopForeground(false);
     }
 
@@ -288,5 +259,10 @@ public class MyService extends Service {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        mp.release();
+        releaseMediaPlayer();
+        nextSong();
+    }
 }

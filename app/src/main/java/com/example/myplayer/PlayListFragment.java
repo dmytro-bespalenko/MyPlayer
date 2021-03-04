@@ -94,8 +94,6 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
         @Override
         public void onReceive(Context context, Intent intent) {
             ArrayList<Playlist> finalList = intent.getParcelableArrayListExtra("finallist");
-            Log.d(TAG, "finallist: " + intent.getIntegerArrayListExtra("finallist"));
-
             recycleAdapter.setSongsList(finalList);
             recycleAdapter.notifyDataSetChanged();
 
@@ -106,24 +104,19 @@ public class PlayListFragment extends Fragment implements AdapterCommunicator {
 
         MediaMetadataRetriever mmr = new MediaMetadataRetriever();
         Field[] fields = R.raw.class.getFields();
-
-
         playList = new ArrayList<>();
-        for (int i = 0; i < fields.length; i++) {
 
-            Uri mediaPath = Uri.parse("android.resource://" + Objects.requireNonNull(getActivity()).getPackageName() + "/" + fields[i].getInt(fields[i]));
+        for (Field field : fields) {
 
+            Uri mediaPath = Uri.parse("android.resource://" + Objects.requireNonNull(getActivity()).getPackageName() + "/" + field.getInt(field));
             mmr.setDataSource(getActivity(), mediaPath);
 
             String sponsorTitle = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
             String sponsorArtist = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
 
-            Log.d(TAG, "getList: " + i);
-            playList.add(new Playlist(sponsorTitle, sponsorArtist, fields[i].getInt(fields[i])));
-            Log.d("Integer.parseInt ", "Integer.parseInt(fields[i].toString()) " + fields[i].getInt(fields[i]));
+            playList.add(new Playlist(sponsorTitle, sponsorArtist, field.getInt(field)));
 
         }
-        Log.d(TAG, "listRaw: " + playList.toString());
 
     }
 
