@@ -22,6 +22,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -32,7 +33,7 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
     private static final String TAG = "My_LOG";
     private int currentSeekBarPosition;
     private List<Playlist> playList = new ArrayList<>();
-    private List<Playlist> finalPlayList = new ArrayList<>();
+    private final List<Playlist> finalPlayList = new ArrayList<>();
     private int playPosition = 0;
     private Executor executor;
     private int clickOnSong;
@@ -68,15 +69,25 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
                 finalPlayList.addAll(playList);
                 break;
             case PLAY:
-                if (finalPlayList.size() > 0 && !mediaPlayer.isPlaying()) {
+                if (mediaPlayer != null) {
+                    mediaPlayer.start();
+                    mediaPlayer.seekTo(currentSeekBarPosition);
+                    executor.execute(timeUpdaterRunnable);
+                }
+                
+                if (finalPlayList.size() > 0 && !Objects.requireNonNull(mediaPlayer).isPlaying()) {
                     releaseMediaPlayer();
-                    mediaPlayer = MediaPlayer.create(this, playList.get(clickOnSong).getId());
+                    playPosition = clickOnSong;
+                    mediaPlayer = MediaPlayer.create(this, playList.get(playPosition).getId());
                     mediaPlayer.setOnCompletionListener(this);
+                    mediaPlayer.start();
                     executor.execute(timeUpdaterRunnable);
                 }
                 break;
             case STOP:
-                onDestroy();
+                currentSeekBarPosition = 0;
+                sendSeekBarMessage();
+                mediaPlayer.stop();
                 break;
             case PAUSE:
                 if (mediaPlayer.isPlaying()) {
@@ -84,16 +95,11 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
                         mediaPlayer.pause();
                         currentSeekBarPosition = mediaPlayer.getCurrentPosition();
                     }
-                } else {
-                    if (mediaPlayer != null) {
-                        mediaPlayer.start();
-                        mediaPlayer.seekTo(currentSeekBarPosition);
-                        executor.execute(timeUpdaterRunnable);
-                    }
                 }
                 break;
             case NEXT:
                 if (finalPlayList.size() > 0) {
+
                     nextSong();
                 }
                 break;
@@ -108,6 +114,7 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
                 }
                 mediaPlayer = MediaPlayer.create(this, finalPlayList.get(clickOnSong).getId());
                 mediaPlayer.setOnCompletionListener(this);
+                mediaPlayer.start();
                 swapSong();
                 playPosition = 0;
                 sendFinalList();
@@ -153,6 +160,7 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
         releaseMediaPlayer();
         mediaPlayer = MediaPlayer.create(this, finalPlayList.get(playPosition).getId());
         mediaPlayer.setOnCompletionListener(this);
+        mediaPlayer.start();
         swapSong();
         sendFinalList();
         playPosition--;
@@ -211,15 +219,16 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
     private final Runnable timeUpdaterRunnable = new Runnable() {
         @Override
         public void run() {
-            mediaPlayer.start();
-            while (mediaPlayer.isPlaying()) {
+
+            while (mediaPlayer != null && mediaPlayer.isPlaying()) {
                 try {
                     currentSeekBarPosition = mediaPlayer.getCurrentPosition();
-                    Log.d(TAG, "run: " + this.toString() + " " + currentSeekBarPosition);
                     sendSeekBarMessage();
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
+                    Log.d(TAG, "run: " + this.toString() + " " + currentSeekBarPosition);
                     e.printStackTrace();
+
                 }
             }
 
@@ -246,10 +255,6 @@ public class MyService extends Service implements MediaPlayer.OnCompletionListen
     @Override
     public void onDestroy() {
         super.onDestroy();
-        currentSeekBarPosition = 0;
-        sendSeekBarMessage();
-        mediaPlayer.stop();
-
         stopForeground(false);
     }
 
